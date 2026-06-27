@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GreenBot Controller</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #1a1a1a;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 24px 0;
+  }
+  #app {
+    width: 390px;
+    min-height: 844px;
+    background: #0A1F0E;
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    border: 8px solid #1a2e1d;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .screen {
+    display: none;
+    width: 100%;
+    min-height: 828px;
+    flex-direction: column;
+    background: #0A1F0E;
+    position: relative;
+    overflow-y: auto;
+  }
+  .screen.active { display: flex; }
+
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 24px 6px;
+    font-size: 12px; font-weight: 500;
+    color: rgba(255,255,255,0.75);
+  }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+
+  /* SPLASH */
+  .splash-bg {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 48px 32px;
+    background: radial-gradient(ellipse at 50% 40%, #1B4D22 0%, #0A1F0E 70%);
+  }
+  .splash-logo {
+    width: 96px; height: 96px;
+    background: #1F5C28; border-radius: 28px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 24px;
+    border: 1.5px solid rgba(100,220,100,0.25);
+  }
+  .splash-logo i { font-size: 52px; color: #5EE87A; }
+  .splash-title { font-size: 30px; font-weight: 500; color: #E8F5E9; text-align: center; line-height: 1.2; margin-bottom: 8px; }
+  .splash-sub { font-size: 14px; color: rgba(200,230,205,0.6); text-align: center; margin-bottom: 56px; line-height: 1.6; }
+  .splash-btn {
+    width: 100%; padding: 18px;
+    background: #3BB554; border: none; border-radius: 16px;
+    color: #fff; font-size: 17px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .splash-btn:active { background: #2F9643; }
+  .splash-version { font-size: 11px; color: rgba(200,230,205,0.3); margin-top: 24px; }
+
+  /* NAV */
+  .nav-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px 8px;
+  }
+  .back-btn {
+    display: flex; align-items: center; gap: 4px;
+    background: none; border: none; color: #5EE87A;
+    font-size: 15px; font-weight: 500; cursor: pointer; padding: 4px 0;
+  }
+  .back-btn i { font-size: 20px; }
+  .nav-title { font-size: 17px; font-weight: 500; color: #E8F5E9; }
+  .nav-action { width: 60px; text-align: right; }
+
+  /* MAIN MENU */
+  .menu-hero {
+    padding: 20px 24px 24px;
+    background: linear-gradient(180deg, #122B16 0%, #0A1F0E 100%);
+  }
+  .greeting { font-size: 13px; color: rgba(200,230,205,0.55); margin-bottom: 4px; }
+  .hero-title { font-size: 26px; font-weight: 500; color: #E8F5E9; margin-bottom: 4px; }
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(59,181,84,0.15); border: 0.5px solid rgba(59,181,84,0.3);
+    border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #5EE87A;
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #5EE87A; }
+  .menu-section { padding: 16px 20px 0; }
+  .section-label { font-size: 11px; font-weight: 500; color: rgba(200,230,205,0.4); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .menu-card {
+    background: #122B16; border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 20px; padding: 20px; margin-bottom: 12px; cursor: pointer;
+    display: flex; align-items: center; gap: 16px; transition: background 0.15s;
+  }
+  .menu-card:hover { background: #1B3D1F; }
+  .card-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .card-icon.green { background: rgba(59,181,84,0.2); }
+  .card-icon.amber { background: rgba(220,160,40,0.18); }
+  .card-icon i { font-size: 26px; }
+  .card-icon.green i { color: #5EE87A; }
+  .card-icon.amber i { color: #F0B429; }
+  .card-text { flex: 1; }
+  .card-title { font-size: 17px; font-weight: 500; color: #E8F5E9; margin-bottom: 2px; }
+  .card-desc { font-size: 13px; color: rgba(200,230,205,0.5); line-height: 1.4; }
+  .card-arrow { color: rgba(200,230,205,0.3); font-size: 20px; }
+
+  /* SUBTASK LIST */
+  .subtask-list { padding: 12px 20px 24px; }
+  .subtask-item {
+    background: #122B16; border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 18px 20px; margin-bottom: 10px;
+    cursor: pointer; display: flex; align-items: center; gap: 14px;
+    transition: background 0.15s;
+  }
+  .subtask-item:hover { background: #1B3D1F; }
+  .step-num {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: rgba(94,232,122,0.12); border: 0.5px solid rgba(94,232,122,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 500; color: #5EE87A; flex-shrink: 0;
+  }
+  .subtask-text { flex: 1; }
+  .subtask-title { font-size: 16px; font-weight: 500; color: #E8F5E9; }
+  .subtask-sub { font-size: 12px; color: rgba(200,230,205,0.45); margin-top: 2px; }
+  .check-icon { font-size: 18px; color: #5EE87A; }
+  .incomplete-icon { font-size: 18px; color: rgba(200,230,205,0.2); }
+
+  /* UPLOAD */
+  .screen-content { padding: 16px 20px 32px; flex: 1; }
+  .upload-zone {
+    border: 1.5px dashed rgba(94,232,122,0.3); border-radius: 20px;
+    padding: 40px 20px; text-align: center; cursor: pointer; margin-bottom: 20px;
+    background: rgba(94,232,122,0.04); transition: border-color 0.2s;
+  }
+  .upload-zone:hover { border-color: rgba(94,232,122,0.5); }
+  .upload-zone i { font-size: 40px; color: #5EE87A; margin-bottom: 12px; display: block; }
+  .upload-title { font-size: 16px; font-weight: 500; color: #E8F5E9; margin-bottom: 4px; }
+  .upload-sub { font-size: 13px; color: rgba(200,230,205,0.45); }
+  .form-label { font-size: 13px; color: rgba(200,230,205,0.6); margin-bottom: 8px; display: block; font-weight: 500; }
+  .form-input {
+    width: 100%; background: #122B16; border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 12px; padding: 14px 16px; color: #E8F5E9;
+    font-size: 16px; outline: none; margin-bottom: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    appearance: none;
+  }
+  .form-input:focus { border-color: rgba(94,232,122,0.4); }
+  .primary-btn {
+    width: 100%; padding: 17px; background: #3BB554; border: none;
+    border-radius: 14px; color: #fff; font-size: 16px; font-weight: 500;
+    cursor: pointer; transition: background 0.15s;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .primary-btn:hover { background: #36a84e; }
+  .primary-btn:active { background: #2F9643; }
+  .primary-btn:disabled { background: #1B3D1F; color: rgba(200,230,205,0.3); cursor: not-allowed; }
+
+  /* CANVAS */
+  .canvas-wrap {
+    width: 100%; height: 260px; background: #071509; border-radius: 16px;
+    border: 0.5px solid rgba(255,255,255,0.08); overflow: hidden;
+    position: relative; margin-bottom: 16px;
+  }
+  #boundaryCanvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+  .tool-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tool-btn {
+    flex: 1; padding: 10px 6px; background: #122B16;
+    border: 0.5px solid rgba(255,255,255,0.1); border-radius: 10px;
+    color: rgba(200,230,205,0.7); font-size: 12px; cursor: pointer;
+    text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .tool-btn i { font-size: 18px; }
+  .tool-btn.active { background: rgba(59,181,84,0.2); border-color: rgba(59,181,84,0.4); color: #5EE87A; }
+  .tool-btn:hover { background: #1B3D1F; }
+  .info-box {
+    background: rgba(94,232,122,0.08); border: 0.5px solid rgba(94,232,122,0.2);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
+  }
+  .info-box p { font-size: 13px; color: rgba(200,230,205,0.7); line-height: 1.5; }
+
+  /* OBSTACLES */
+  .obstacle-canvas-wrap {
+    width: 100%; height: 240px; background: #071509; border-radius: 16px;
+    border: 0.5px solid rgba(255,255,255,0.08); overflow: hidden;
+    position: relative; margin-bottom: 14px;
+  }
+  #obstacleCanvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+  .obstacle-type-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .obs-type-btn {
+    flex: 1; padding: 10px 4px; background: #122B16;
+    border: 0.5px solid rgba(255,255,255,0.1); border-radius: 10px;
+    font-size: 11px; color: rgba(200,230,205,0.6); cursor: pointer;
+    text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    transition: all 0.15s;
+  }
+  .obs-type-btn i { font-size: 18px; }
+  .obs-type-btn.active-obs { background: rgba(240,180,41,0.15); border-color: rgba(240,180,41,0.35); color: #F0B429; }
+  .obs-type-btn.active-restricted { background: rgba(226,75,74,0.15); border-color: rgba(226,75,74,0.35); color: #E24B4A; }
+
+  /* CONFIRMATION */
+  .confirm-screen {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 32px 28px; text-align: center;
+  }
+  .confirm-icon {
+    width: 88px; height: 88px; border-radius: 26px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px;
+  }
+  .confirm-icon.success { background: rgba(59,181,84,0.18); }
+  .confirm-icon.success i { font-size: 48px; color: #5EE87A; }
+  .confirm-title { font-size: 24px; font-weight: 500; color: #E8F5E9; margin-bottom: 8px; }
+  .confirm-sub { font-size: 15px; color: rgba(200,230,205,0.5); line-height: 1.6; margin-bottom: 32px; }
+  .confirm-detail {
+    background: #122B16; border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 16px 20px; width: 100%; margin-bottom: 28px; text-align: left;
+  }
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; }
+  .detail-row + .detail-row { border-top: 0.5px solid rgba(255,255,255,0.06); }
+  .detail-label { font-size: 13px; color: rgba(200,230,205,0.45); }
+  .detail-value { font-size: 13px; color: #E8F5E9; font-weight: 500; }
+  .ghost-btn {
+    width: 100%; padding: 16px; background: transparent;
+    border: 0.5px solid rgba(255,255,255,0.12); border-radius: 14px;
+    color: rgba(200,230,205,0.6); font-size: 15px; font-weight: 500;
+    cursor: pointer; margin-top: 10px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition: background 0.15s;
+  }
+  .ghost-btn:hover { background: rgba(255,255,255,0.04); }
+
+  /* TASK 2 GRID */
+  .task2-grid { padding: 12px 20px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .task2-card {
+    background: #122B16; border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 18px; padding: 18px 14px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: background 0.15s; min-height: 140px;
+  }
+  .task2-card:hover { background: #1B3D1F; }
+  .task2-icon { font-size: 30px; }
+  .task2-label { font-size: 14px; font-weight: 500; color: #E8F5E9; line-height: 1.3; }
+  .task2-desc { font-size: 11px; color: rgba(200,230,205,0.4); }
+
+  /* MOW */
+  .pattern-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .pattern-btn {
+    flex: 1; padding: 14px 8px; background: #122B16;
+    border: 0.5px solid rgba(255,255,255,0.08); border-radius: 12px;
+    color: rgba(200,230,205,0.6); font-size: 12px; cursor: pointer;
+    text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: all 0.15s;
+  }
+  .pattern-btn i { font-size: 22px; }
+  .pattern-btn.selected { background: rgba(59,181,84,0.18); border-color: rgba(59,181,84,0.4); color: #5EE87A; }
+  .slider-row { margin-bottom: 20px; }
+  .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .slider-label { font-size: 14px; color: rgba(200,230,205,0.7); font-weight: 500; }
+  .slider-val { font-size: 14px; color: #5EE87A; font-weight: 500; }
+  input[type=range] { width: 100%; accent-color: #3BB554; height: 4px; cursor: pointer; }
+
+  /* EDGE */
+  .edge-map-preview {
+    width: 100%; height: 180px; background: #071509; border-radius: 16px;
+    border: 0.5px solid rgba(255,255,255,0.08); overflow: hidden;
+    position: relative; margin-bottom: 16px;
+  }
+  #edgeCanvas { width: 100%; height: 100%; display: block; }
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 0.5px solid rgba(255,255,255,0.06); margin-bottom: 16px;
+  }
+  .toggle-label { font-size: 15px; color: rgba(200,230,205,0.8); }
+  .toggle {
+    width: 44px; height: 26px; background: #1B3D1F; border-radius: 13px;
+    position: relative; cursor: pointer; border: none; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle.on { background: #3BB554; }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left 0.2s;
+  }
+  .toggle.on::after { left: 21px; }
+
+  /* TRIM */
+  .bush-list { margin-bottom: 16px; }
+  .bush-item {
+    background: #122B16; border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .bush-item i.plant-icon { font-size: 22px; color: #5EE87A; }
+  .bush-info { flex: 1; }
+  .bush-name { font-size: 14px; font-weight: 500; color: #E8F5E9; }
+  .bush-detail { font-size: 11px; color: rgba(200,230,205,0.4); margin-top: 2px; }
+  .bush-check { font-size: 20px; color: rgba(200,230,205,0.2); cursor: pointer; transition: color 0.15s; }
+  .bush-check.checked { color: #5EE87A; }
+
+  /* BLOW */
+  .zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .zone-card {
+    background: #122B16; border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px; padding: 14px; cursor: pointer; text-align: center;
+    transition: all 0.15s;
+  }
+  .zone-card:hover { background: #1B3D1F; }
+  .zone-card.selected { background: rgba(59,181,84,0.15); border-color: rgba(59,181,84,0.4); }
+  .zone-card i { font-size: 24px; color: rgba(200,230,205,0.4); margin-bottom: 6px; display: block; }
+  .zone-card.selected i { color: #5EE87A; }
+  .zone-card span { font-size: 12px; color: rgba(200,230,205,0.5); display: block; }
+  .zone-card.selected span { color: #5EE87A; }
+
+  /* LAUNCH SHEET */
+  .launch-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: flex-end; z-index: 100; border-radius: 36px; overflow: hidden;
+  }
+  .launch-sheet {
+    width: 100%; background: #122B16;
+    border-radius: 24px 24px 0 0; padding: 20px 24px 40px;
+  }
+  .sheet-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin: 0 auto 20px; }
+  .sheet-title { font-size: 20px; font-weight: 500; color: #E8F5E9; margin-bottom: 6px; }
+  .sheet-sub { font-size: 14px; color: rgba(200,230,205,0.5); margin-bottom: 20px; line-height: 1.5; }
+  .sheet-params { background: #0A1F0E; border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; }
+  .param-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; }
+  .param-row + .param-row { border-top: 0.5px solid rgba(255,255,255,0.06); }
+  .param-key { color: rgba(200,230,205,0.45); }
+  .param-val { color: #E8F5E9; font-weight: 500; }
+  .launch-btn {
+    width: 100%; padding: 17px; background: #3BB554; border: none;
+    border-radius: 14px; color: #fff; font-size: 16px; font-weight: 500;
+    cursor: pointer; margin-bottom: 10px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition: background 0.15s;
+  }
+  .launch-btn:hover { background: #36a84e; }
+
+  /* PROGRESS */
+  .progress-ring-wrap { display: flex; align-items: center; justify-content: center; padding: 24px 0 16px; }
+  .progress-label { text-align: center; font-size: 28px; font-weight: 500; color: #5EE87A; }
+  .progress-sublabel { text-align: center; font-size: 13px; color: rgba(200,230,205,0.45); margin-bottom: 20px; }
+  .task-steps { padding: 0 0 24px; }
+  .task-step {
+    display: flex; align-items: center; gap: 12px; padding: 12px 0;
+    border-bottom: 0.5px solid rgba(255,255,255,0.05);
+  }
+  .step-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .step-dot.done { background: #5EE87A; }
+  .step-dot.active { background: #F0B429; }
+  .step-dot.pending { background: rgba(200,230,205,0.15); }
+  .step-text { font-size: 14px; }
+  .step-text.done { color: rgba(200,230,205,0.5); }
+  .step-text.active { color: #E8F5E9; font-weight: 500; }
+  .step-text.pending { color: rgba(200,230,205,0.3); }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- SPLASH -->
+  <div class="screen active" id="s-splash">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-icons">
+        <i class="ti ti-wifi" style="font-size:14px"></i>
+        <i class="ti ti-battery-2" style="font-size:14px"></i>
+      </div>
+    </div>
+    <div class="splash-bg">
+      <div class="splash-logo"><i class="ti ti-robot"></i></div>
+      <div class="splash-title">GreenBot<br>Controller</div>
+      <div class="splash-sub">Intelligent lawn care,<br>fully in your hands.</div>
+      <button class="splash-btn" onclick="go('s-main')">Get Started</button>
+      <div class="splash-version">v1.0 · Robot connected</div>
+    </div>
+  </div>
+
+  <!-- MAIN MENU -->
+  <div class="screen" id="s-main">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div>
+    </div>
+    <div class="menu-hero">
+      <div class="greeting">Good morning</div>
+      <div class="hero-title">What would you<br>like to do?</div>
+      <br>
+      <span class="status-pill"><span class="status-dot"></span>Robot ready</span>
+    </div>
+    <div class="menu-section">
+      <div class="section-label">Setup</div>
+      <div class="menu-card" onclick="go('s-yardmenu')">
+        <div class="card-icon green"><i class="ti ti-map-2"></i></div>
+        <div class="card-text">
+          <div class="card-title">Yard Setup</div>
+          <div class="card-desc">Map your property, mark boundaries and obstacles</div>
+        </div>
+        <i class="ti ti-chevron-right card-arrow"></i>
+      </div>
+    </div>
+    <div class="menu-section">
+      <div class="section-label">Tasks</div>
+      <div class="menu-card" onclick="go('s-task2menu')">
+        <div class="card-icon amber"><i class="ti ti-scissors"></i></div>
+        <div class="card-text">
+          <div class="card-title">Lawn Care Tasks</div>
+          <div class="card-desc">Mow, edge, trim, and blow your lawn on demand</div>
+        </div>
+        <i class="ti ti-chevron-right card-arrow"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- YARD SETUP MENU -->
+  <div class="screen" id="s-yardmenu">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="nav-header">
+      <button class="back-btn" onclick="go('s-main')"><i class="ti ti-chevron-left"></i> Back</button>
+      <span class="nav-title">Yard Setup</span>
+      <div class="nav-action"></div>
+    </div>
+    <div class="subtask-list">
+      <div class="subtask-item" onclick="go('s-upload')">
+        <div class="step-num" id="step1num">1</div>
+        <div class="subtask-text">
+          <div class="subtask-title">Upload Property Map</div>
+          <div class="subtask-sub">Upload and name your property map</div>
+        </div>
+        <i class="ti ti-chevron-right incomplete-icon" id="step1arrow"></i>
+      </div>
+      <div class="subtask-item" onclick="go('s-boundary')">
+        <div class="step-num" id="step2num">2</div>
+        <div class="subtask-text">
+          <div class="subtask-title">Mark Lawn Boundaries</div>
+          <div class="subtask-sub">Draw boundaries visually on your map</div>
+        </div>
+        <i class="ti ti-chevron-right incomplete-icon" id="step2arrow"></i>
+      </div>
+      <div class="subtask-item" onclick="go('s-obstacles')">
+        <div class="step-num" id="step3num">3</div>
+        <div class="subtask-text">
+          <div class="subtask-title">Identify Obstacles</div>
+          <div class="subtask-sub">Mark obstacles and restricted areas</div>
+        </div>
+        <i class="ti ti-chevron-right incomplete-icon" id="step3arrow"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1.1 UPLOAD -->
+  <div class="screen" id="s-upload">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="nav-header">
+      <button class="back-btn" onclick="go('s-yardmenu')"><i class="ti ti-chevron-left"></i> Yard Setup</button>
+      <span class="nav-title">Upload Map</span>
+      <div class="nav-action"></div>
+    </div>
+    <div class="screen-content">
+      <div class="upload-zone" id="uploadZone" onclick="handleUpload()">
+        <i class="ti ti-cloud-upload" id="uploadIcon"></i>
+        <div class="upload-title" id="uploadTitle">Tap to upload map</div>
+        <div class="upload-sub" id="uploadSub">Supports JPG, PNG, PDF</div>
+      </div>
+      <label class="form-label">Property name</label>
+      <input class="form-input" type="text" id="propName" placeholder="e.g. My Home — Front Yard" oninput="checkUploadReady()">
+      <label class="form-label">Map type</label>
+      <select class="form-input" id="mapType" onchange="checkUploadReady()">
+        <option value="">Select map type…</option>
+        <option>Satellite photo</option>
+        <option>Hand-drawn sketch</option>
+        <option>Survey document</option>
+      </select>
+      <button class="primary-btn" id="uploadSaveBtn" onclick="confirmUpload()" disabled>Save Property Map</button>
+    </div>
+  </div>
+
+  <!-- 1.1 CONFIRM -->
+  <div class="screen" id="s-upload-confirm">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="confirm-screen">
+      <div class="confirm-icon success"><i class="ti ti-check"></i></div>
+      <div class="confirm-title">Map saved!</div>
+      <div class="confirm-sub">Your property map has been uploaded and saved to the robot's memory.</div>
+      <div class="confirm-detail">
+        <div class="detail-row"><span class="detail-label">Property name</span><span class="detail-value" id="conf-propname">—</span></div>
+        <div class="detail-row"><span class="detail-label">Map type</span><span class="detail-value" id="conf-maptype">—</span></div>
+        <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="color:#5EE87A">Saved ✓</span></div>
+      </div>
+      <button class="primary-btn" onclick="go('s-yardmenu')">Continue to Boundaries</button>
+      <button class="ghost-btn" onclick="go('s-main')">Back to Main Menu</button>
+    </div>
+  </div>
+
+  <!-- 1.2 BOUNDARY -->
+  <div class="screen" id="s-boundary">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="nav-header">
+      <button class="back-btn" onclick="go('s-yardmenu')"><i class="ti ti-chevron-left"></i> Yard Setup</button>
+      <span class="nav-title">Lawn Boundaries</span>
+      <div class="nav-action"></div>
+    </div>
+    <div class="screen-content">
+      <div class="info-box">
+        <p>Click points on the map to draw your lawn boundary. The robot will stay within this area.</p>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="boundaryCanvas"></canvas>
+      </div>
+      <div class="tool-row">
+        <button class="tool-btn active" id="tool-draw" onclick="setTool('draw')">
+          <i class="ti ti-pencil"></i><span>Draw</span>
+        </button>
+        <button class="tool-btn" id="tool-erase" onclick="setTool('erase')">
+          <i class="ti ti-eraser"></i><span>Erase</span>
+        </button>
+        <button class="tool-btn" id="tool-undo" onclick="undoBoundary()">
+          <i class="ti ti-arrow-back-up"></i><span>Undo</span>
+        </button>
+        <button class="tool-btn" id="tool-clear" onclick="clearBoundary()">
+          <i class="ti ti-trash"></i><span>Clear</span>
+        </button>
+      </div>
+      <button class="primary-btn" id="boundaryBtn" onclick="confirmBoundary()" disabled>Save Boundary</button>
+    </div>
+  </div>
+
+  <!-- 1.2 CONFIRM -->
+  <div class="screen" id="s-boundary-confirm">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="confirm-screen">
+      <div class="confirm-icon success"><i class="ti ti-check"></i></div>
+      <div class="confirm-title">Boundary saved!</div>
+      <div class="confirm-sub">Your lawn boundary has been transmitted to the robot. It will respect these limits during all tasks.</div>
+      <div class="confirm-detail">
+        <div class="detail-row"><span class="detail-label">Points placed</span><span class="detail-value" id="conf-bpoints">—</span></div>
+        <div class="detail-row"><span class="detail-label">Coverage area</span><span class="detail-value" id="conf-barea">—</span></div>
+        <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="color:#5EE87A">Active ✓</span></div>
+      </div>
+      <button class="primary-btn" onclick="go('s-yardmenu')">Continue to Obstacles</button>
+      <button class="ghost-btn" onclick="go('s-main')">Back to Main Menu</button>
+    </div>
+  </div>
+
+  <!-- 1.3 OBSTACLES -->
+  <div class="screen" id="s-obstacles">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="nav-header">
+      <button class="back-btn" onclick="go('s-yardmenu')"><i class="ti ti-chevron-left"></i> Yard Setup</button>
+      <span class="nav-title">Obstacles</span>
+      <div class="nav-action"></div>
+    </div>
+    <div class="screen-content">
+      <div class="obstacle-type-row">
+        <button class="obs-type-btn active-obs" id="obs-btn-obstacle" onclick="setObsType('obstacle')">
+          <i class="ti ti-alert-triangle"></i><span>Obstacle</span>
+        </button>
+        <button class="obs-type-btn" id="obs-btn-restricted" onclick="setObsType('restricted')">
+          <i class="ti ti-ban"></i><span>Restricted</span>
+        </button>
+        <button class="obs-type-btn" id="obs-btn-clear" onclick="clearObstacles()" style="color:rgba(200,230,205,0.5)">
+          <i class="ti ti-trash"></i><span>Clear</span>
+        </button>
+      </div>
+      <div class="obstacle-canvas-wrap">
+        <canvas id="obstacleCanvas"></canvas>
+      </div>
+      <div class="info-box">
+        <p><span style="color:#F0B429">●</span> Obstacle — physical items (trees, posts) &nbsp; <span style="color:#E24B4A">■</span> Restricted — no-go zones (garden beds, pools)</p>
+      </div>
+      <button class="primary-btn" onclick="confirmObstacles()">Save Obstacles</button>
+    </div>
+  </div>
+
+  <!-- 1.3 CONFIRM -->
+  <div class="screen" id="s-obstacles-confirm">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="confirm-screen">
+      <div class="confirm-icon success"><i class="ti ti-check"></i></div>
+      <div class="confirm-title">Yard setup complete!</div>
+      <div class="confirm-sub">All obstacles and restricted zones have been mapped. Your robot is ready for lawn care tasks.</div>
+      <div class="confirm-detail">
+        <div class="detail-row"><span class="detail-label">Obstacles marked</span><span class="detail-value" id="conf-obs">—</span></div>
+        <div class="detail-row"><span class="detail-label">Restricted zones</span><span class="detail-value" id="conf-res">—</span></div>
+        <div class="detail-row"><span class="detail-label">Yard setup</span><span class="detail-value" style="color:#5EE87A">Complete ✓</span></div>
+      </div>
+      <button class="primary-btn" onclick="go('s-task2menu')">Go to Lawn Care Tasks</button>
+      <button class="ghost-btn" onclick="go('s-main')">Back to Main Menu</button>
+    </div>
+  </div>
+
+  <!-- TASK 2 MENU -->
+  <div class="screen" id="s-task2menu">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="nav-header">
+      <button class="back-btn" onclick="go('s-main')"><i class="ti ti-chevron-left"></i> Back</button>
+      <span class="nav-title">Lawn Care Tasks</span>
+      <div class="nav-action"></div>
+    </div>
+    <div style="padding: 8px 20px 8px;">
+      <div class="info-box">
+        <p>Select any task to launch it on demand. Tasks run independently — no specific order required.</p>
+      </div>
+    </div>
+    <div class="task2-grid">
+      <div class="task2-card" onclick="go('s-mow')">
+        <span class="task2-icon">🌿</span>
+        <div class="task2-label">Mow Grass</div>
+        <div class="task2-desc">Pattern &amp; height</div>
+      </div>
+      <div class="task2-card" onclick="go('s-edge')">
+        <span class="task2-icon">✂️</span>
+        <div class="task2-label">Edge Lawn Borders</div>
+        <div class="task2-desc">Clean border cuts</div>
+      </div>
+      <div class="task2-card" onclick="go('s-trim')">
+        <span class="task2-icon">🌿</span>
+        <div class="task2-label">Trim Bushes &amp; Hedges</div>
+        <div class="task2-desc">Shape &amp; tidy</div>
+      </div>
+      <div class="task2-card" onclick="go('s-blow')">
+        <span class="task2-icon">💨</span>
+        <div class="task2-label">Blow Walkways</div>
+        <div class="task2-desc">Clear clippings</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2.1 MOW -->
+  <div class="screen" id="s-mow">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="nav-header">
+      <button class="back-btn" onclick="go('s-task2menu')"><i class="ti ti-chevron-left"></i> Tasks</button>
+      <span class="nav-title">Mow Grass</span>
+      <div class="nav-action"></div>
+    </div>
+    <div class="screen-content">
+      <label class="form-label">Mowing pattern</label>
+      <div class="pattern-row">
+        <button class="pattern-btn selected" id="pat-stripe" onclick="selectPat('stripe')">
+          <i class="ti ti-line-dashed"></i><span>Stripe</span>
+        </button>
+        <button class="pattern-btn" id="pat-spiral" onclick="selectPat('spiral')">
+          <i class="ti ti-spiral"></i><span>Spiral</span>
+        </button>
+        <button class="pattern-btn" id="pat-grid" onclick="selectPat('grid')">
+          <i class="ti ti-grid-dots"></i><span>Grid</span>
+        </button>
+      </div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Cutting height</span>
+          <span class="slider-val" id="heightVal">3.0 cm</span>
+        </div>
+        <input type="range" min="1" max="8" step="0.5" value="3" id="heightSlider"
+          oninput="document.getElementById('heightVal').textContent = parseFloat(this.value).toFixed(1) + ' cm'">
+      </div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Mowing speed</span>
+          <span class="slider-val" id="speedVal">50%</span>
+        </div>
+        <input type="range" min="10" max="100" step="10" value="50" id="speedSlider"
+          oninput="document.getElementById('speedVal').textContent = this.value + '%'">
+      </div>
+      <label class="form-label">Lawn area to mow</label>
+      <select class="form-input" id="mowArea">
+        <option>Entire lawn</option>
+        <option>Front yard only</option>
+        <option>Back yard only</option>
+        <option>Left side only</option>
+        <option>Right side only</option>
+      </select>
+      <button class="primary-btn" onclick="showLaunch('mow')">Review &amp; Launch</button>
+    </div>
+  </div>
+
+  <!-- 2.2 EDGE -->
+  <div class="screen" id="s-edge">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="nav-header">
+      <button class="back-btn" onclick="go('s-task2menu')"><i class="ti ti-chevron-left"></i> Tasks</button>
+      <span class="nav-title">Edge Lawn Borders</span>
+      <div class="nav-action"></div>
+    </div>
+    <div class="screen-content">
+      <label class="form-label">Edge preview</label>
+      <div class="edge-map-preview">
+        <canvas id="edgeCanvas"></canvas>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Edge all boundaries</span>
+        <button class="toggle on" id="toggleAll" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Edge depth</span>
+          <span class="slider-val" id="edgeDepthVal">2 cm</span>
+        </div>
+        <input type="range" min="1" max="5" step="1" value="2" id="edgeDepth"
+          oninput="document.getElementById('edgeDepthVal').textContent = this.value + ' cm'">
+      </div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Pass count</span>
+          <span class="slider-val" id="passCountVal">1 pass</span>
+        </div>
+        <input type="range" min="1" max="3" step="1" value="1" id="passCount"
+          oninput="document.getElementById('passCountVal').textContent = this.value + (this.value == 1 ? ' pass' : ' passes')">
+      </div>
+      <button class="primary-btn" onclick="showLaunch('edge')">Review &amp; Launch</button>
+    </div>
+  </div>
+
+  <!-- 2.3 TRIM -->
+  <div class="screen" id="s-trim">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="nav-header">
+      <button class="back-btn" onclick="go('s-task2menu')"><i class="ti ti-chevron-left"></i> Tasks</button>
+      <span class="nav-title">Trim Bushes &amp; Hedges</span>
+      <div class="nav-action"></div>
+    </div>
+    <div class="screen-content">
+      <div class="info-box" style="margin-bottom:16px">
+        <p>Select the bushes and hedges you'd like the robot to trim this session.</p>
+      </div>
+      <label class="form-label">Identified shrubs</label>
+      <div class="bush-list">
+        <div class="bush-item">
+          <i class="ti ti-plant plant-icon"></i>
+          <div class="bush-info"><div class="bush-name">Front hedge row</div><div class="bush-detail">Est. 8 m · Box hedge</div></div>
+          <i class="ti ti-square-check bush-check checked" onclick="toggleBush(this)"></i>
+        </div>
+        <div class="bush-item">
+          <i class="ti ti-plant-2 plant-icon"></i>
+          <div class="bush-info"><div class="bush-name">Side garden bushes</div><div class="bush-detail">Est. 4 m · Mixed shrubs</div></div>
+          <i class="ti ti-square-check bush-check checked" onclick="toggleBush(this)"></i>
+        </div>
+        <div class="bush-item">
+          <i class="ti ti-trees plant-icon"></i>
+          <div class="bush-info"><div class="bush-name">Back fence hedges</div><div class="bush-detail">Est. 12 m · Privacy hedge</div></div>
+          <i class="ti ti-square bush-check" onclick="toggleBush(this)"></i>
+        </div>
+      </div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Trim amount</span>
+          <span class="slider-val" id="trimAmt">5 cm</span>
+        </div>
+        <input type="range" min="1" max="15" step="1" value="5" id="trimSlider"
+          oninput="document.getElementById('trimAmt').textContent = this.value + ' cm'">
+      </div>
+      <button class="primary-btn" onclick="showLaunch('trim')">Review &amp; Launch</button>
+    </div>
+  </div>
+
+  <!-- 2.4 BLOW -->
+  <div class="screen" id="s-blow">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="nav-header">
+      <button class="back-btn" onclick="go('s-task2menu')"><i class="ti ti-chevron-left"></i> Tasks</button>
+      <span class="nav-title">Blow Walkways</span>
+      <div class="nav-action"></div>
+    </div>
+    <div class="screen-content">
+      <label class="form-label">Select zones to clear</label>
+      <div class="zone-grid">
+        <div class="zone-card selected" onclick="toggleZone(this)">
+          <i class="ti ti-home"></i><span>Front walkway</span>
+        </div>
+        <div class="zone-card selected" onclick="toggleZone(this)">
+          <i class="ti ti-road"></i><span>Driveway</span>
+        </div>
+        <div class="zone-card" onclick="toggleZone(this)">
+          <i class="ti ti-building"></i><span>Side passage</span>
+        </div>
+        <div class="zone-card" onclick="toggleZone(this)">
+          <i class="ti ti-gate"></i><span>Back patio</span>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Collect grass clippings</span>
+        <button class="toggle on" id="collectToggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Blower power</span>
+          <span class="slider-val" id="blowPowerVal">70%</span>
+        </div>
+        <input type="range" min="10" max="100" step="10" value="70" id="blowPower"
+          oninput="document.getElementById('blowPowerVal').textContent = this.value + '%'">
+      </div>
+      <button class="primary-btn" onclick="showLaunch('blow')">Review &amp; Launch</button>
+    </div>
+  </div>
+
+  <!-- LAUNCH OVERLAY -->
+  <div class="launch-overlay" id="launchOverlay" style="display:none">
+    <div class="launch-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="launchTitle">Launch Task</div>
+      <div class="sheet-sub">Review the settings below, then tap Launch to send the task to your robot.</div>
+      <div class="sheet-params" id="launchParams"></div>
+      <button class="launch-btn" onclick="executeLaunch()">Launch Now</button>
+      <button class="ghost-btn" onclick="closeLaunch()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="screen" id="s-progress">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="nav-header">
+      <button class="back-btn" onclick="go('s-task2menu')"><i class="ti ti-chevron-left"></i> Tasks</button>
+      <span class="nav-title" id="progressTitle">Running Task</span>
+      <div class="nav-action"></div>
+    </div>
+    <div class="screen-content">
+      <div class="progress-ring-wrap">
+        <svg width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#122B16" stroke-width="10"/>
+          <circle id="progRing" cx="60" cy="60" r="52" fill="none" stroke="#3BB554" stroke-width="10"
+            stroke-dasharray="326.7" stroke-dashoffset="326.7" stroke-linecap="round"
+            transform="rotate(-90 60 60)"/>
+          <text x="60" y="64" text-anchor="middle" font-size="20" font-weight="500" fill="#E8F5E9" id="progPct">0%</text>
+        </svg>
+      </div>
+      <div class="progress-label" id="progLabel">Initializing…</div>
+      <div class="progress-sublabel" id="progSub">Robot is starting up</div>
+      <div class="task-steps" id="taskSteps"></div>
+      <button class="ghost-btn" style="margin-top:8px;color:#E24B4A;border-color:rgba(226,75,74,0.3)" onclick="go('s-task2menu')">Stop Task</button>
+    </div>
+  </div>
+
+  <!-- TASK DONE -->
+  <div class="screen" id="s-taskdone">
+    <div class="status-bar"><span>9:41</span><div class="status-icons"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-2" style="font-size:14px"></i></div></div>
+    <div class="confirm-screen">
+      <div class="confirm-icon success"><i class="ti ti-check"></i></div>
+      <div class="confirm-title">Task complete!</div>
+      <div class="confirm-sub">The robot has finished and is returning to its dock.</div>
+      <div class="confirm-detail">
+        <div class="detail-row"><span class="detail-label">Task</span><span class="detail-value" id="done-task">—</span></div>
+        <div class="detail-row"><span class="detail-label">Duration</span><span class="detail-value" id="done-dur">—</span></div>
+        <div class="detail-row"><span class="detail-label">Coverage</span><span class="detail-value" id="done-cov">100%</span></div>
+        <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="color:#5EE87A">Done ✓</span></div>
+      </div>
+      <button class="primary-btn" onclick="go('s-task2menu')">Run Another Task</button>
+      <button class="ghost-btn" onclick="go('s-main')">Back to Main Menu</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const screens = document.querySelectorAll('.screen');
+function go(id) {
+  screens.forEach(s => s.classList.remove('active'));
+  const t = document.getElementById(id);
+  if (t) { t.classList.add('active'); t.scrollTop = 0; }
+  if (id === 's-boundary') setTimeout(initBoundaryCanvas, 60);
+  if (id === 's-obstacles') setTimeout(initObstacleCanvas, 60);
+  if (id === 's-edge') setTimeout(initEdgeCanvas, 60);
+}
+
+// UPLOAD
+let mapUploaded = false;
+function handleUpload() {
+  mapUploaded = true;
+  document.getElementById('uploadIcon').className = 'ti ti-file-check';
+  document.getElementById('uploadIcon').style.color = '#5EE87A';
+  document.getElementById('uploadTitle').textContent = 'satellite_map.jpg';
+  document.getElementById('uploadSub').textContent = 'Uploaded successfully · 2.4 MB';
+  document.getElementById('uploadZone').style.borderColor = 'rgba(94,232,122,0.5)';
+  checkUploadReady();
+}
+function checkUploadReady() {
+  const name = document.getElementById('propName').value.trim();
+  const type = document.getElementById('mapType').value;
+  document.getElementById('uploadSaveBtn').disabled = !(mapUploaded && name && type);
+}
+function confirmUpload() {
+  document.getElementById('conf-propname').textContent = document.getElementById('propName').value || 'My Property';
+  document.getElementById('conf-maptype').textContent = document.getElementById('mapType').value;
+  markStep(1); go('s-upload-confirm');
+}
+
+// BOUNDARY
+let bPoints = [], activeTool = 'draw', bCanvas, bCtx;
+function initBoundaryCanvas() {
+  bCanvas = document.getElementById('boundaryCanvas');
+  if (!bCanvas) return;
+  bCtx = bCanvas.getContext('2d');
+  bCanvas.width = bCanvas.offsetWidth; bCanvas.height = bCanvas.offsetHeight;
+  drawBoundary();
+  bCanvas.onclick = (e) => {
+    const r = bCanvas.getBoundingClientRect();
+    handleBClick((e.clientX - r.left) * (bCanvas.width / r.width), (e.clientY - r.top) * (bCanvas.height / r.height));
+  };
+}
+function handleBClick(x, y) {
+  if (activeTool === 'draw') {
+    bPoints.push({x, y}); drawBoundary();
+    document.getElementById('boundaryBtn').disabled = bPoints.length < 3;
+  }
+}
+function drawBoundary() {
+  if (!bCtx) return;
+  bCtx.clearRect(0, 0, bCanvas.width, bCanvas.height);
+  bCtx.fillStyle = 'rgba(59,181,84,0.05)'; bCtx.fillRect(0,0,bCanvas.width,bCanvas.height);
+  bCtx.strokeStyle = 'rgba(94,232,122,0.08)'; bCtx.lineWidth = 0.5;
+  for (let x=0;x<bCanvas.width;x+=30){bCtx.beginPath();bCtx.moveTo(x,0);bCtx.lineTo(x,bCanvas.height);bCtx.stroke();}
+  for (let y=0;y<bCanvas.height;y+=30){bCtx.beginPath();bCtx.moveTo(0,y);bCtx.lineTo(bCanvas.width,y);bCtx.stroke();}
+  if (bPoints.length < 1) return;
+  if (bPoints.length >= 2) {
+    bCtx.beginPath(); bCtx.moveTo(bPoints[0].x, bPoints[0].y);
+    bPoints.forEach(p => bCtx.lineTo(p.x, p.y));
+    if (bPoints.length > 2) bCtx.closePath();
+    bCtx.strokeStyle = '#5EE87A'; bCtx.lineWidth = 2.5; bCtx.stroke();
+    bCtx.fillStyle = 'rgba(59,181,84,0.12)'; bCtx.fill();
+  }
+  bPoints.forEach((p,i) => {
+    bCtx.beginPath(); bCtx.arc(p.x, p.y, i===0?7:5, 0, Math.PI*2);
+    bCtx.fillStyle = i===0?'#fff':'#5EE87A'; bCtx.fill();
+    bCtx.strokeStyle='#5EE87A'; bCtx.lineWidth=2; bCtx.stroke();
+  });
+}
+function setTool(t) {
+  activeTool = t;
+  ['draw','erase','undo','clear'].forEach(n => { const el=document.getElementById('tool-'+n); if(el) el.classList.remove('active'); });
+  const el = document.getElementById('tool-'+t); if(el) el.classList.add('active');
+}
+function undoBoundary() { if(bPoints.length){bPoints.pop();drawBoundary();document.getElementById('boundaryBtn').disabled=bPoints.length<3;} }
+function clearBoundary() { bPoints=[];drawBoundary();document.getElementById('boundaryBtn').disabled=true; }
+function confirmBoundary() {
+  document.getElementById('conf-bpoints').textContent = bPoints.length + ' points';
+  document.getElementById('conf-barea').textContent = Math.round(bPoints.length * 42) + ' m²';
+  markStep(2); go('s-boundary-confirm');
+}
+
+// OBSTACLES
+let obsItems = [], obsType = 'obstacle', oCanvas, oCtx;
+function initObstacleCanvas() {
+  oCanvas = document.getElementById('obstacleCanvas');
+  if (!oCanvas) return;
+  oCtx = oCanvas.getContext('2d');
+  oCanvas.width = oCanvas.offsetWidth; oCanvas.height = oCanvas.offsetHeight;
+  drawObstacleBase();
+  oCanvas.onclick = (e) => {
+    const r = oCanvas.getBoundingClientRect();
+    obsItems.push({x:(e.clientX-r.left)*(oCanvas.width/r.width), y:(e.clientY-r.top)*(oCanvas.height/r.height), type:obsType});
+    drawObstacleBase();
+  };
+}
+function drawObstacleBase() {
+  if (!oCtx) return;
+  oCtx.clearRect(0,0,oCanvas.width,oCanvas.height);
+  oCtx.fillStyle='rgba(59,181,84,0.05)'; oCtx.fillRect(0,0,oCanvas.width,oCanvas.height);
+  oCtx.strokeStyle='rgba(94,232,122,0.08)'; oCtx.lineWidth=0.5;
+  for(let x=0;x<oCanvas.width;x+=28){oCtx.beginPath();oCtx.moveTo(x,0);oCtx.lineTo(x,oCanvas.height);oCtx.stroke();}
+  for(let y=0;y<oCanvas.height;y+=28){oCtx.beginPath();oCtx.moveTo(0,y);oCtx.lineTo(oCanvas.width,y);oCtx.stroke();}
+  if (bPoints.length > 2) {
+    const sx=oCanvas.width/350, sy=oCanvas.height/260;
+    oCtx.beginPath(); oCtx.moveTo(bPoints[0].x*sx, bPoints[0].y*sy);
+    bPoints.forEach(p=>oCtx.lineTo(p.x*sx,p.y*sy)); oCtx.closePath();
+    oCtx.strokeStyle='rgba(94,232,122,0.35)'; oCtx.lineWidth=1.5; oCtx.stroke();
+  }
+  obsItems.forEach(o => {
+    if (o.type==='obstacle') {
+      oCtx.beginPath(); oCtx.arc(o.x,o.y,12,0,Math.PI*2);
+      oCtx.fillStyle='rgba(240,180,41,0.25)'; oCtx.fill();
+      oCtx.strokeStyle='#F0B429'; oCtx.lineWidth=2; oCtx.stroke();
+      oCtx.fillStyle='#F0B429'; oCtx.font='13px sans-serif'; oCtx.textAlign='center'; oCtx.fillText('⚠',o.x,o.y+5);
+    } else {
+      oCtx.fillStyle='rgba(226,75,74,0.2)'; oCtx.fillRect(o.x-15,o.y-11,30,22);
+      oCtx.strokeStyle='#E24B4A'; oCtx.lineWidth=1.5; oCtx.strokeRect(o.x-15,o.y-11,30,22);
+      oCtx.fillStyle='#E24B4A'; oCtx.font='13px sans-serif'; oCtx.textAlign='center'; oCtx.fillText('🚫',o.x,o.y+5);
+    }
+  });
+}
+function setObsType(t) {
+  obsType = t;
+  document.getElementById('obs-btn-obstacle').className = 'obs-type-btn' + (t==='obstacle'?' active-obs':'');
+  document.getElementById('obs-btn-restricted').className = 'obs-type-btn' + (t==='restricted'?' active-restricted':'');
+}
+function clearObstacles() { obsItems=[]; drawObstacleBase(); }
+function confirmObstacles() {
+  document.getElementById('conf-obs').textContent = obsItems.filter(o=>o.type==='obstacle').length;
+  document.getElementById('conf-res').textContent = obsItems.filter(o=>o.type==='restricted').length;
+  markStep(3); go('s-obstacles-confirm');
+}
+
+// EDGE CANVAS
+function initEdgeCanvas() {
+  const c = document.getElementById('edgeCanvas'); if(!c) return;
+  const ctx = c.getContext('2d');
+  c.width = c.offsetWidth; c.height = c.offsetHeight;
+  const w=c.width, h=c.height;
+  ctx.fillStyle='#071509'; ctx.fillRect(0,0,w,h);
+  const pts=[{x:40,y:36},{x:w-36,y:36},{x:w-36,y:h-36},{x:60,y:h-36},{x:40,y:h-18},{x:40,y:36}];
+  ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+  pts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.fillStyle='rgba(59,181,84,0.1)'; ctx.fill();
+  ctx.strokeStyle='#5EE87A'; ctx.lineWidth=2; ctx.stroke();
+  const off=9;
+  ctx.beginPath();
+  for(let i=0;i<pts.length;i++){
+    const nx=pts[(i+1)%pts.length]; const dx=nx.x-pts[i].x, dy=nx.y-pts[i].y;
+    const len=Math.sqrt(dx*dx+dy*dy); const ox=-dy/len*off, oy=dx/len*off;
+    if(i===0) ctx.moveTo(pts[i].x+ox,pts[i].y+oy); else ctx.lineTo(pts[i].x+ox,pts[i].y+oy);
+  }
+  ctx.strokeStyle='rgba(240,180,41,0.75)'; ctx.lineWidth=1.5; ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='rgba(200,230,205,0.3)'; ctx.font='11px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('Yellow dashed = robot edge path',12,h-10);
+}
+
+// MISC
+function toggleBush(el) {
+  if(el.classList.contains('checked')){el.className='ti ti-square bush-check';}
+  else{el.className='ti ti-square-check bush-check checked';}
+}
+function toggleZone(el) { el.classList.toggle('selected'); }
+function selectPat(id) {
+  ['stripe','spiral','grid'].forEach(n=>document.getElementById('pat-'+n).classList.remove('selected'));
+  document.getElementById('pat-'+id).classList.add('selected');
+}
+
+// LAUNCH
+let launchTask='';
+function showLaunch(task) {
+  launchTask=task;
+  const titles={mow:'Mow Grass',edge:'Edge Lawn Borders',trim:'Trim Bushes & Hedges',blow:'Blow Walkways'};
+  document.getElementById('launchTitle').textContent='Launch: '+titles[task];
+  let p='';
+  if(task==='mow'){
+    const pat=document.querySelector('.pattern-btn.selected')?.textContent.trim()||'Stripe';
+    p=row('Pattern',pat)+row('Height',parseFloat(document.getElementById('heightSlider').value).toFixed(1)+' cm')+row('Speed',document.getElementById('speedSlider').value+'%')+row('Area',document.getElementById('mowArea').value);
+  } else if(task==='edge'){
+    p=row('Edge depth',document.getElementById('edgeDepth').value+' cm')+row('Passes',document.getElementById('passCount').value)+row('Scope','All boundaries');
+  } else if(task==='trim'){
+    p=row('Shrubs selected',document.querySelectorAll('.bush-check.checked').length)+row('Trim amount',document.getElementById('trimSlider').value+' cm');
+  } else {
+    p=row('Zones',document.querySelectorAll('.zone-card.selected').length)+row('Power',document.getElementById('blowPower').value+'%')+row('Collect clippings',document.getElementById('collectToggle').classList.contains('on')?'Yes':'No');
+  }
+  document.getElementById('launchParams').innerHTML=p;
+  document.getElementById('launchOverlay').style.display='flex';
+}
+function row(k,v){return `<div class="param-row"><span class="param-key">${k}</span><span class="param-val">${v}</span></div>`;}
+function closeLaunch(){document.getElementById('launchOverlay').style.display='none';}
+
+function executeLaunch() {
+  closeLaunch();
+  const labels={mow:'Mowing Grass',edge:'Edging Borders',trim:'Trimming Bushes',blow:'Blowing Walkways'};
+  const steps={
+    mow:['Initializing blade','Scanning area','Mowing in progress','Final pass','Returning to dock'],
+    edge:['Calibrating edger','Following boundary','Edging in progress','Clean-up pass','Returning to dock'],
+    trim:['Locating shrubs','Setting blade height','Trimming in progress','Final touches','Returning to dock'],
+    blow:['Activating blower','Clearing zones','Collecting clippings','Final sweep','Returning to dock']
+  };
+  document.getElementById('progressTitle').textContent=labels[launchTask];
+  document.getElementById('taskSteps').innerHTML=steps[launchTask].map((s,i)=>`
+    <div class="task-step">
+      <div class="step-dot ${i===0?'active':'pending'}" id="sd${i}"></div>
+      <span class="step-text ${i===0?'active':'pending'}" id="st${i}">${s}</span>
+    </div>`).join('');
+  go('s-progress');
+  let step=0, pct=0;
+  const ring=document.getElementById('progRing');
+  const circumference=326.7;
+  const stepList=steps[launchTask];
+  const iv=setInterval(()=>{
+    pct+=4; if(pct>100)pct=100;
+    ring.style.strokeDashoffset=circumference-(circumference*pct/100);
+    document.getElementById('progPct').textContent=Math.round(pct)+'%';
+    const ns=Math.floor((pct/100)*stepList.length);
+    if(ns!==step&&ns<stepList.length){
+      const sdp=document.getElementById('sd'+step), stp=document.getElementById('st'+step);
+      if(sdp){sdp.className='step-dot done';stp.className='step-text done';}
+      step=ns;
+      const sdc=document.getElementById('sd'+step), stc=document.getElementById('st'+step);
+      if(sdc){sdc.className='step-dot active';stc.className='step-text active';}
+      document.getElementById('progLabel').textContent=stepList[step];
+      document.getElementById('progSub').textContent='Robot working · '+Math.round(pct)+'% complete';
+    }
+    if(pct>=100){
+      clearInterval(iv);
+      setTimeout(()=>{
+        const dm={mow:'Mow Grass',edge:'Edge Lawn Borders',trim:'Trim Bushes & Hedges',blow:'Blow Walkways'};
+        const dur={mow:'~28 min',edge:'~14 min',trim:'~22 min',blow:'~9 min'};
+        document.getElementById('done-task').textContent=dm[launchTask];
+        document.getElementById('done-dur').textContent=dur[launchTask];
+        go('s-taskdone');
+      },800);
+    }
+  },80);
+}
+
+function markStep(n) {
+  const num=document.getElementById('step'+n+'num'); if(num) num.style.background='rgba(94,232,122,0.25)';
+  const arr=document.getElementById('step'+n+'arrow'); if(arr){arr.className='ti ti-check check-icon';}
+}
+</script>
+</body>
+</html>
